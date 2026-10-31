@@ -1,189 +1,200 @@
+(() => {
+  "use strict";
 
-/* =========================================
-   JADA DIGITAL
-   Main JavaScript File
-   ========================================= */
+  const menuToggle = document.getElementById("menu-toggle");
+  const navMenu = document.getElementById("nav-menu");
+  const navLinks = document.querySelectorAll(".nav-link");
+  const contactForm = document.getElementById("contact-form");
+  const formNote = document.getElementById("form-note");
+  const yearElement = document.getElementById("current-year");
 
+  // Update the copyright year automatically.
+  if (yearElement) {
+    yearElement.textContent = new Date().getFullYear();
+  }
 
-/* ---------- 1. MOBILE NAVIGATION ---------- */
+  // Mobile navigation.
+  function closeMenu() {
+    if (!menuToggle || !navMenu) return;
 
-const menuToggle = document.getElementById("menu-toggle");
-const navMenu = document.getElementById("nav-menu");
-const navLinks = document.querySelectorAll(".nav-link");
+    menuToggle.setAttribute("aria-expanded", "false");
+    menuToggle.setAttribute("aria-label", "Open navigation menu");
+    navMenu.classList.remove("is-open");
+  }
 
-// Open and close the mobile navigation menu
-if (menuToggle && navMenu) {
-    menuToggle.addEventListener("click", function () {
-        const isExpanded =
-            menuToggle.getAttribute("aria-expanded") === "true";
+  if (menuToggle && navMenu) {
+    menuToggle.addEventListener("click", () => {
+      const isOpen = menuToggle.getAttribute("aria-expanded") === "true";
+      const nextState = !isOpen;
 
-        menuToggle.setAttribute("aria-expanded", String(!isExpanded));
-        menuToggle.setAttribute(
-            "aria-label",
-            isExpanded ? "Open navigation menu" : "Close navigation menu"
-        );
+      menuToggle.setAttribute("aria-expanded", String(nextState));
+      menuToggle.setAttribute(
+        "aria-label",
+        nextState ? "Close navigation menu" : "Open navigation menu"
+      );
 
-        navMenu.classList.toggle("active", !isExpanded);
+      navMenu.classList.toggle("is-open", nextState);
     });
 
-    // Close the menu after a navigation link is clicked
-    navLinks.forEach(function (link) {
-        link.addEventListener("click", function () {
-            navMenu.classList.remove("active");
-            menuToggle.setAttribute("aria-expanded", "false");
-            menuToggle.setAttribute("aria-label", "Open navigation menu");
-        });
+    // Close the menu after clicking a navigation link.
+    navLinks.forEach((link) => {
+      link.addEventListener("click", closeMenu);
     });
 
-    // Close the menu when the user clicks outside it
-    document.addEventListener("click", function (event) {
-        const clickedInsideMenu = navMenu.contains(event.target);
-        const clickedToggle = menuToggle.contains(event.target);
-
-        if (!clickedInsideMenu && !clickedToggle) {
-            navMenu.classList.remove("active");
-            menuToggle.setAttribute("aria-expanded", "false");
-            menuToggle.setAttribute("aria-label", "Open navigation menu");
-        }
+    // Close the menu when clicking outside it.
+    document.addEventListener("click", (event) => {
+      if (
+        navMenu.classList.contains("is-open") &&
+        !navMenu.contains(event.target) &&
+        !menuToggle.contains(event.target)
+      ) {
+        closeMenu();
+      }
     });
 
-    // Close the mobile menu when returning to desktop layout
-    window.addEventListener("resize", function () {
-        if (window.innerWidth > 760) {
-            navMenu.classList.remove("active");
-            menuToggle.setAttribute("aria-expanded", "false");
-            menuToggle.setAttribute("aria-label", "Open navigation menu");
-        }
+    // Close the menu with the Escape key.
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && navMenu.classList.contains("is-open")) {
+        closeMenu();
+        menuToggle.focus();
+      }
     });
-}
 
-
-/* ---------- 2. AUTOMATIC COPYRIGHT YEAR ---------- */
-
-const currentYear = document.getElementById("current-year");
-
-if (currentYear) {
-    currentYear.textContent = new Date().getFullYear();
-}
-
-
-/* ---------- 3. CONTACT FORM ---------- */
-
-// Replace this with your real email address before publishing.
-const CONTACT_EMAIL = "YOUR_EMAIL@example.com";
-
-const contactForm = document.getElementById("contact-form");
-
-if (contactForm) {
-    contactForm.addEventListener("submit", function (event) {
-        event.preventDefault();
-
-        // Get the values entered by the visitor
-        const name = document.getElementById("name").value.trim();
-        const email = document.getElementById("email").value.trim();
-        const service = document.getElementById("service").value;
-        const message = document.getElementById("message").value.trim();
-
-        // Check that required fields are not empty
-        if (!name || !email || !message) {
-            alert("Please complete all required fields.");
-            return;
-        }
-
-        // Validate the email format
-        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-        if (!emailPattern.test(email)) {
-            alert("Please enter a valid email address.");
-            return;
-        }
-
-        // Prevent opening an email with the placeholder address
-        if (
-            !CONTACT_EMAIL ||
-            CONTACT_EMAIL === "YOUR_EMAIL@example.com"
-        ) {
-            alert(
-                "The contact form is almost ready! " +
-                "Please add your real email address in script.js."
-            );
-            return;
-        }
-
-        // Prepare the email subject
-        const subject = encodeURIComponent(
-            "Website Enquiry from " + name
-        );
-
-        // Prepare the email body
-        const body = encodeURIComponent(
-            "Hello Aliyu,\n\n" +
-            "You have received a new enquiry from your JADA DIGITAL website.\n\n" +
-            "Name: " + name + "\n" +
-            "Email: " + email + "\n" +
-            "Service requested: " + (service || "Not specified") + "\n\n" +
-            "Project details:\n" +
-            message +
-            "\n\nSent from the JADA DIGITAL website."
-        );
-
-        // Open the visitor's default email application
-        const mailtoLink =
-            "mailto:" + CONTACT_EMAIL +
-            "?subject=" + subject +
-            "&body=" + body;
-
-        window.location.href = mailtoLink;
+    // Close the mobile menu when returning to desktop width.
+    window.addEventListener("resize", () => {
+      if (window.innerWidth > 720) closeMenu();
     });
-}
+  }
 
+  // Highlight the navigation link for the section currently in view.
+  const sections = document.querySelectorAll("main section[id]");
 
-/* ---------- 4. ACTIVE NAVIGATION LINKS ---------- */
-
-// Highlight the navigation link for the section
-// currently visible on the screen.
-
-const pageSections = document.querySelectorAll("main section[id]");
-
-if ("IntersectionObserver" in window && pageSections.length > 0) {
+  if ("IntersectionObserver" in window && sections.length && navLinks.length) {
     const sectionObserver = new IntersectionObserver(
-        function (entries) {
-            entries.forEach(function (entry) {
-                if (entry.isIntersecting) {
-                    const sectionId = entry.target.id;
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
 
-                    navLinks.forEach(function (link) {
-                        const linkTarget = link.getAttribute("href");
+          navLinks.forEach((link) => {
+            const isCurrent =
+              link.getAttribute("href") === `#${entry.target.id}`;
 
-                        if (linkTarget === "#" + sectionId) {
-                            link.classList.add("active");
-                        } else {
-                            link.classList.remove("active");
-                        }
-                    });
-                }
-            });
-        },
-        {
-            root: null,
-            rootMargin: "-30% 0px -60% 0px",
-            threshold: 0
-        }
+            link.classList.toggle("active", isCurrent);
+
+            if (isCurrent) {
+              link.setAttribute("aria-current", "location");
+            } else {
+              link.removeAttribute("aria-current");
+            }
+          });
+        });
+      },
+      {
+        rootMargin: "-35% 0px -55% 0px"
+      }
     );
 
-    pageSections.forEach(function (section) {
-        sectionObserver.observe(section);
+    sections.forEach((section) => {
+      sectionObserver.observe(section);
     });
-}
+  }
 
+  // Send contact enquiries through WhatsApp.
+  if (contactForm) {
+    contactForm.addEventListener("submit", (event) => {
+      event.preventDefault();
 
-/* ---------- 5. CONSOLE MESSAGE ---------- */
+      const nameField = document.getElementById("name");
+      const emailField = document.getElementById("email");
+      const serviceField = document.getElementById("service");
+      const messageField = document.getElementById("message");
 
-console.log(
-    "%cJADA DIGITAL",
-    "color: #36c878; font-size: 22px; font-weight: bold;"
-);
+      const name = nameField.value.trim();
+      const email = emailField.value.trim();
+      const service = serviceField.value.trim() || "Not specified";
+      const message = messageField.value.trim();
 
-console.log(
-    "Build Digital. Grow Beyond."
-);
+      // Validate the visitor's name.
+      if (name.length < 2) {
+        nameField.setCustomValidity(
+          "Please enter your name (at least 2 characters)."
+        );
+        nameField.reportValidity();
+        nameField.focus();
+        return;
+      }
+
+      nameField.setCustomValidity("");
+
+      // Validate the email address.
+      if (!emailField.checkValidity()) {
+        emailField.reportValidity();
+        emailField.focus();
+        return;
+      }
+
+      // Validate the project message.
+      if (message.length < 5) {
+        messageField.setCustomValidity(
+          "Please add a few details about your project."
+        );
+        messageField.reportValidity();
+        messageField.focus();
+        return;
+      }
+
+      messageField.setCustomValidity("");
+
+      // Your WhatsApp number: country code + number.
+      // Do not add a plus sign or spaces.
+      const whatsappNumber = "2347026571314";
+
+      // Prepare the message for WhatsApp.
+      const whatsappText = [
+        "Hello Aliyu, I found you through the JADA DIGITAL website.",
+        "",
+        `My name is ${name}.`,
+        `Email: ${email}`,
+        `Service needed: ${service}`,
+        "",
+        "Project details:",
+        message,
+        "",
+        "Thank you."
+      ].join("\n");
+
+      // Encode the message so it works correctly in the WhatsApp URL.
+      const whatsappURL =
+        `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappText)}`;
+
+      if (formNote) {
+        formNote.textContent =
+          "Your WhatsApp message is ready. Review the details in WhatsApp and tap Send to submit your enquiry.";
+      }
+
+      // Open WhatsApp in a new tab or window.
+      // The visitor must still press Send inside WhatsApp.
+      const whatsappWindow = window.open(
+        whatsappURL,
+        "_blank",
+        "noopener,noreferrer"
+      );
+
+      // Fallback if the browser blocks the new window.
+      if (!whatsappWindow) {
+        window.location.href = whatsappURL;
+      }
+    });
+
+    // Clear validation messages when the visitor edits a field.
+    ["name", "email", "message"].forEach((id) => {
+      const field = document.getElementById(id);
+
+      if (field) {
+        field.addEventListener("input", () => {
+          field.setCustomValidity("");
+        });
+      }
+    });
+  }
+})();
